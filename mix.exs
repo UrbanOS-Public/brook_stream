@@ -3,9 +3,9 @@ defmodule Brook.MixProject do
 
   def project do
     [
-      app: :brook,
-      version: "0.6.0",
-      elixir: "~> 1.8",
+      app: :brook_stream,
+      version: "1.0.0",
+      elixir: "~> 1.14",
       description: description(),
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -26,17 +26,17 @@ defmodule Brook.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:brook_serializer, "~> 2.2"},
-      {:json_serde, "~> 1.0"},
-      {:redix, "~> 0.10.2"},
-      {:elsa, "~> 0.12.0"},
-      {:placebo, "~> 1.2", only: [:dev, :test, :integration]},
-      {:assertions, "~> 0.14.1", only: [:test, :integration]},
-      {:divo, "~> 1.1", only: [:dev, :integration]},
-      {:divo_kafka, "~> 0.1.5", only: [:integration]},
-      {:divo_redis, "~> 0.1.4", only: [:integration]},
-      {:ex_doc, "~> 0.21.3", only: [:dev]},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
+      {:brook_serializer, "~> 2.2.1"},
+      {:json_serde, "~> 1.1"},
+      {:redix, "~> 1.2"},
+      {:elsa_kafka, "~> 2.0"},
+      {:mock, "~> 0.3.7", only: [:dev, :test, :integration]},
+      {:assertions, "~> 0.19", only: [:test, :integration]},
+      {:divo, "~> 2.0", only: [:dev, :integration]},
+      {:divo_kafka, "~> 1.0", only: [:integration]},
+      {:divo_redis, "~> 1.0", only: [:integration]},
+      {:ex_doc, "~> 0.29", only: [:dev]},
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false}
     ]
   end
 
@@ -48,9 +48,9 @@ defmodule Brook.MixProject do
 
   defp package do
     [
-      maintainers: ["Brian Balser"],
+      maintainers: ["smartcitiesData"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/bbalser/brook"}
+      links: %{"GitHub" => "https://github.com/UrbanOS-Public/brook_stream"}
     ]
   end
 

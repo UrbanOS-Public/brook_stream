@@ -26,6 +26,20 @@ defmodule Brook.IntegrationTest do
       storage: %{
         module: Brook.Storage.Redis,
         init_arg: [redix_args: [host: "localhost"], namespace: "test:snapshot"]
+      },
+      services: %{
+        foobar: %{
+          image: "foobar:latest",
+          ports: ["8080:8080"],
+          command: ["/bin/server", "foreground"]
+        },
+        db: %{
+          image: "cooldb:5.0.9",
+          environment: [
+            "PASSWORD=we-are-divo",
+            "DB=foobar-db"
+          ]
+        }
       }
     ]
 

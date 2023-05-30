@@ -72,7 +72,7 @@ defmodule Brook.Event do
 
     case Brook.serialize(brook_event) do
       {:ok, serialized_event} ->
-        :ok = apply(driver.module, :send_event, [instance, type, serialized_event])
+        :ok = driver.module.send_event(instance, type, serialized_event)
 
       {:error, reason} = error ->
         Logger.error(

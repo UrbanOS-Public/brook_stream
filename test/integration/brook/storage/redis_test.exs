@@ -1,7 +1,8 @@
 defmodule Brook.Storage.RedisTest do
   use ExUnit.Case
   use Divo, services: [:redis]
-  use Placebo
+
+  import Mock
 
   alias Brook.Storage.Redis
 
@@ -57,10 +58,10 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "will return an error tuple when redis returns an error" do
-      allow Redix.command(any(), any()), return: {:error, :some_failure}
-
-      event = Brook.Event.new(type: "create", author: "testing", data: "data")
-      assert {:error, :some_failure} == Redis.persist(@instance, event, "people", "key1", %{one: 1})
+      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+        event = Brook.Event.new(type: "create", author: "testing", data: "data")
+        assert {:error, :some_failure} == Redis.persist(@instance, event, "people", "key1", %{one: 1})
+      end
     end
 
     test "will only save configured number for event with restrictions" do
@@ -91,9 +92,9 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns an error tuple when redix returns an error" do
-      allow Redix.command(any(), any()), return: {:error, :some_failure}
-
-      assert {:error, :some_failure} == Redis.get(@instance, "people", "key1")
+      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+        assert {:error, :some_failure} == Redis.get(@instance, "people", "key1")
+      end
     end
   end
 
@@ -125,24 +126,35 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns error tuple when redix returns an error" do
-      allow Redix.command(any(), any()), return: {:error, :some_failure}
-
-      assert {:error, :some_failure} == Redis.get_events(@instance, "people", "key1")
+      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+        assert {:error, :some_failure} == Redis.get_events(@instance, "people", "key1")
+      end
     end
 
     test "returns an error when LRANGE call fails" do
-      allow Redix.command(any(), ["KEYS" | any()]), return: {:ok, ["one", "two", "three"]}
-      allow Redix.command(any(), ["LRANGE" | any()]), seq: [{:ok, [:event]}, {:error, :some_failure}]
+
+      :meck.new(Redix)
+      :meck.expect(Redix, :command, 2, :meck.seq([{:ok, ["one", "two", "three"]}, {:ok, [:event]}, {:error, :some_failure}]))
 
       assert {:error, :some_failure} == Redis.get_events(@instance, "people", "key1")
+
+      :meck.unload(Redix)
     end
 
     test "return an error when deserialize fails" do
-      allow Redix.command(any(), ["KEYS" | any()]), return: {:ok, ["one", "two", "three"]}
-      allow Redix.command(any(), ["LRANGE" | any()]), return: {:ok, [:zlib.gzip("one")]}
-      allow Brook.deserialize(any()), seq: [{:ok, :deserialized}, {:error, :deserialize_error}]
 
-      assert {:error, :deserialize_error} == Redis.get_events(@instance, "people", "key1")
+      with_mock(Redix, [command: fn
+          (_, ["KEYS" | _]) -> {:ok, ["one", "two", "three"]}
+          (_, ["LRANGE" | _]) -> {:ok, [:zlib.gzip("one")]}
+        end
+      ]) do
+        :meck.new(Brook)
+        :meck.expect(Brook, :deserialize, 1, :meck.seq([{:ok, :deserialized}, {:error, :deserialize_error}]))
+
+        assert {:error, :deserialize_error} == Redis.get_events(@instance, "people", "key1")
+
+        :meck.unload(Brook)
+      end
     end
   end
 
@@ -161,15 +173,15 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns error tuple when redix returns an error" do
-      allow Redix.command(any(), any()), return: {:error, :some_failure}
-
-      assert {:error, :some_failure} == Redis.get_all(@instance, "people")
+      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+        assert {:error, :some_failure} == Redis.get_all(@instance, "people")
+      end
     end
 
     test "returns empty map when no data available" do
-      allow Redix.command(any(), ["KEYS" | any()]), return: {:ok, []}
-
-      assert {:ok, %{}} == Redis.get_all(@instance, "jerks")
+      with_mock(Redix, [command: fn(_, ["KEYS" | _]) -> {:ok, []} end]) do
+        assert {:ok, %{}} == Redis.get_all(@instance, "jerks")
+      end
     end
   end
 
@@ -187,9 +199,9 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "return error tuple when redis return error tuple" do
-      allow Redix.command(any(), any()), return: {:error, :some_failure}
-
-      assert {:error, :some_failure} == Redis.delete(@instance, "people", "key")
+      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+        assert {:error, :some_failure} == Redis.delete(@instance, "people", "key")
+      end
     end
   end
 
