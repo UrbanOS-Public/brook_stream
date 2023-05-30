@@ -1,25 +1,29 @@
 defmodule Brook.Driver.KafkaTest do
   use ExUnit.Case
-  use Placebo
+  import Mock
 
-  setup do
-    allow Registry.meta(any(), any()), return: {:ok, %{connection: :client, topic: :topic}}
+  setup_with_mocks([
+    {Registry, [], [meta: fn(_, _) -> {:ok, %{connection: :client, topic: :topic}} end]}
+  ]) do
     :ok
   end
 
   describe "send_event/2" do
     test "will retry several times before giving up" do
-      allow Elsa.produce(any(), any(), any()), seq: [{:error, "message", []}, {:error, "message", []}, :ok]
+      :meck.new(Elsa)
+      :meck.expect(Elsa, :produce, 3, :meck.seq([{:error, "message", []}, {:error, "message", []}, :ok]))
 
       assert :ok == Brook.Driver.Kafka.send_event(:registry, :type, :message)
 
-      assert_called Elsa.produce(:client, :topic, {:type, :message}), times(3)
+      assert_called_exactly Elsa.produce(:client, :topic, {:type, :message}), 3
+
+      :meck.unload(Elsa)
     end
 
     test "will return the last error received" do
-      allow Elsa.produce(any(), any(), any()), return: {:error, "message", []}
-
-      assert {:error, "message", []} == Brook.Driver.Kafka.send_event(:registry, :type, :message)
+      with_mock(Elsa, [produce: fn(_, _, _) -> {:error, "message", []} end]) do
+        assert {:error, "message", []} == Brook.Driver.Kafka.send_event(:registry, :type, :message)
+      end
     end
   end
 end

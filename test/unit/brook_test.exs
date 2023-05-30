@@ -1,7 +1,7 @@
 defmodule BrookTest do
   use ExUnit.Case
-  use Placebo
   import Assertions
+  import Mock
 
   @instance :brook_test
 
@@ -36,12 +36,13 @@ defmodule BrookTest do
   end
 
   test "calls dispatcher" do
-    allow Brook.Dispatcher.Default.dispatch(any(), any()), return: :ok
-    event = event("CREATE", %{"id" => 456, "name" => "Bob"})
-    :ok = Brook.Event.process(@instance, event)
+    with_mock(Brook.Dispatcher.Default, [dispatch: fn(_, _) -> :ok end]) do
+      event = event("CREATE", %{"id" => 456, "name" => "Bob"})
+      :ok = Brook.Event.process(@instance, event)
 
-    assert_async do
-      assert_called Brook.Dispatcher.Default.dispatch(@instance, event)
+      assert_async do
+        assert_called Brook.Dispatcher.Default.dispatch(@instance, event)
+      end
     end
   end
 

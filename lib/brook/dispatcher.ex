@@ -33,9 +33,17 @@ defmodule Brook.Dispatcher.Default do
   @impl Brook.Dispatcher
   def init(args) do
     instance = Keyword.fetch!(args, :instance)
-    :pg2.create(instance)
-    [{pid, _}] = registry(instance) |> Registry.lookup(Brook.Server)
-    :pg2.join(instance, pid)
+    {:ok, pid} = Supervisor.start_link(children(), strategy: :one_for_one, name: instance)
+    :pg.join(instance, pid)
+  end
+
+  defp children, do: [pg_spec()]
+
+  defp pg_spec do
+    %{
+      id: :pg,
+      start: {:pg, :start_link, []}
+    }
   end
 
   @doc """
@@ -47,7 +55,7 @@ defmodule Brook.Dispatcher.Default do
   def dispatch(instance, %Brook.Event{} = event) do
     forwarded_event = %{event | forwarded: true}
 
-    (:pg2.get_members(instance) -- :pg2.get_local_members(instance))
+    (:pg.get_members(instance) -- :pg.get_local_members(instance))
     |> Enum.each(fn pid ->
       GenServer.cast(pid, {:process, forwarded_event})
     end)
