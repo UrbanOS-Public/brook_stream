@@ -58,7 +58,7 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "will return an error tuple when redis returns an error" do
-      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+      with_mock(Redix, command: fn _, _ -> {:error, :some_failure} end) do
         event = Brook.Event.new(type: "create", author: "testing", data: "data")
         assert {:error, :some_failure} == Redis.persist(@instance, event, "people", "key1", %{one: 1})
       end
@@ -92,7 +92,7 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns an error tuple when redix returns an error" do
-      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+      with_mock(Redix, command: fn _, _ -> {:error, :some_failure} end) do
         assert {:error, :some_failure} == Redis.get(@instance, "people", "key1")
       end
     end
@@ -126,15 +126,20 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns error tuple when redix returns an error" do
-      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+      with_mock(Redix, command: fn _, _ -> {:error, :some_failure} end) do
         assert {:error, :some_failure} == Redis.get_events(@instance, "people", "key1")
       end
     end
 
     test "returns an error when LRANGE call fails" do
-
       :meck.new(Redix)
-      :meck.expect(Redix, :command, 2, :meck.seq([{:ok, ["one", "two", "three"]}, {:ok, [:event]}, {:error, :some_failure}]))
+
+      :meck.expect(
+        Redix,
+        :command,
+        2,
+        :meck.seq([{:ok, ["one", "two", "three"]}, {:ok, [:event]}, {:error, :some_failure}])
+      )
 
       assert {:error, :some_failure} == Redis.get_events(@instance, "people", "key1")
 
@@ -142,12 +147,12 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "return an error when deserialize fails" do
-
-      with_mock(Redix, [command: fn
-          (_, ["KEYS" | _]) -> {:ok, ["one", "two", "three"]}
-          (_, ["LRANGE" | _]) -> {:ok, [:zlib.gzip("one")]}
+      with_mock(Redix,
+        command: fn
+          _, ["KEYS" | _] -> {:ok, ["one", "two", "three"]}
+          _, ["LRANGE" | _] -> {:ok, [:zlib.gzip("one")]}
         end
-      ]) do
+      ) do
         :meck.new(Brook)
         :meck.expect(Brook, :deserialize, 1, :meck.seq([{:ok, :deserialized}, {:error, :deserialize_error}]))
 
@@ -173,13 +178,13 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "returns error tuple when redix returns an error" do
-      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+      with_mock(Redix, command: fn _, _ -> {:error, :some_failure} end) do
         assert {:error, :some_failure} == Redis.get_all(@instance, "people")
       end
     end
 
     test "returns empty map when no data available" do
-      with_mock(Redix, [command: fn(_, ["KEYS" | _]) -> {:ok, []} end]) do
+      with_mock(Redix, command: fn _, ["KEYS" | _] -> {:ok, []} end) do
         assert {:ok, %{}} == Redis.get_all(@instance, "jerks")
       end
     end
@@ -199,7 +204,7 @@ defmodule Brook.Storage.RedisTest do
     end
 
     test "return error tuple when redis return error tuple" do
-      with_mock(Redix, [command: fn(_, _) -> {:error, :some_failure} end]) do
+      with_mock(Redix, command: fn _, _ -> {:error, :some_failure} end) do
         assert {:error, :some_failure} == Redis.delete(@instance, "people", "key")
       end
     end

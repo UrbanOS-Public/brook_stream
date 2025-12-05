@@ -11,12 +11,12 @@ redix_args = [host: host]
 config :brook_stream,
   divo: [
     {DivoKafka,
-    [
-      create_topics: "test:1:1",
-      outside_host: host,
-      auto_topic: false,
-      kafka_image_version: "2.12-2.1.1"
-    ]},
+     [
+       create_topics: "test:1:1",
+       outside_host: host,
+       auto_topic: false,
+       kafka_image_version: "2.12-2.1.1"
+     ]},
     DivoRedis
   ],
   divo_wait: [dwell: 700, max_tries: 50],

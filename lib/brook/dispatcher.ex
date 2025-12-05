@@ -33,7 +33,18 @@ defmodule Brook.Dispatcher.Default do
   @impl Brook.Dispatcher
   def init(args) do
     instance = Keyword.fetch!(args, :instance)
-    {:ok, pid} = Supervisor.start_link(children(), strategy: :one_for_one, name: instance)
+
+    # Handle case where supervisor is already started (e.g., by another component)
+    pid =
+      case Supervisor.start_link(children(), strategy: :one_for_one, name: instance) do
+        {:ok, pid} ->
+          pid
+
+        {:error, {:already_started, pid}} ->
+          # Supervisor already exists, use it
+          pid
+      end
+
     :pg.join(instance, pid)
   end
 

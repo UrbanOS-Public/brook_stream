@@ -76,9 +76,7 @@ defmodule Brook.Event do
 
       {:error, reason} = error ->
         Logger.error(
-          "Unable to send event: type(#{type}), author(#{author}), event(#{inspect(event)}), error reason: #{
-            inspect(reason)
-          }"
+          "Unable to send event: type(#{type}), author(#{author}), event(#{inspect(event)}), error reason: #{inspect(reason)}"
         )
 
         error

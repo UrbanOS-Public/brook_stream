@@ -36,12 +36,12 @@ defmodule BrookTest do
   end
 
   test "calls dispatcher" do
-    with_mock(Brook.Dispatcher.Default, [dispatch: fn(_, _) -> :ok end]) do
+    with_mock(Brook.Dispatcher.Default, dispatch: fn _, _ -> :ok end) do
       event = event("CREATE", %{"id" => 456, "name" => "Bob"})
       :ok = Brook.Event.process(@instance, event)
 
       assert_async do
-        assert_called Brook.Dispatcher.Default.dispatch(@instance, event)
+        assert_called(Brook.Dispatcher.Default.dispatch(@instance, event))
       end
     end
   end
